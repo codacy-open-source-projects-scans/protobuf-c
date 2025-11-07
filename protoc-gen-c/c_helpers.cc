@@ -32,7 +32,8 @@
 //  Based on original Protocol Buffers design by
 //  Sanjay Ghemawat, Jeff Dean, and others.
 
-// Copyright (c) 2008-2013, Dave Benson.  All rights reserved.
+// Copyright (c) 2008-2025, Dave Benson and the protobuf-c authors.
+// All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -60,19 +61,21 @@
 
 // Modified to implement C code by Dave Benson.
 
+#include <cstdint>
 #include <memory>
-#include <vector>
 #include <set>
-#include <stdio.h>		// for snprintf
-#include <float.h>
+#include <vector>
 
-#include <protoc-c/c_helpers.h>
+#include <float.h>
+#include <stdio.h>		// for snprintf
+
+#include <google/protobuf/descriptor.h>
 #include <google/protobuf/stubs/common.h>
 
-namespace google {
-namespace protobuf {
-namespace compiler {
-namespace c {
+#include "c_helpers.h"
+#include "compat.h"
+
+namespace protobuf_c {
 
 #if defined(_MSC_VER)
 // FIXME: In the case where the generated string is longer than the buffer,
@@ -87,20 +90,13 @@ namespace c {
 #pragma warning(disable:4996)
 #endif
 
-std::string DotsToUnderscores(const std::string& name) {
-  return StringReplace(name, ".", "_", true);
-}
-
-std::string DotsToColons(const std::string& name) {
-  return StringReplace(name, ".", "::", true);
-}
-
 std::string SimpleFtoa(float f) {
   char buf[100];
   snprintf(buf,sizeof(buf),"%.*g", FLT_DIG, f);
   buf[sizeof(buf)-1] = 0;		/* should NOT be necessary */
   return buf;
 }
+
 std::string SimpleDtoa(double d) {
   char buf[100];
   snprintf(buf,sizeof(buf),"%.*g", DBL_DIG, d);
@@ -108,7 +104,7 @@ std::string SimpleDtoa(double d) {
   return buf;
 }
 
-std::string CamelToUpper(const std::string &name) {
+std::string CamelToUpper(compat::StringView name) {
   bool was_upper = true;		// suppress initial _
   std::string rv = "";
   int len = name.length();
@@ -125,7 +121,8 @@ std::string CamelToUpper(const std::string &name) {
   }
   return rv;
 }
-std::string CamelToLower(const std::string &name) {
+
+std::string CamelToLower(compat::StringView name) {
   bool was_upper = true;		// suppress initial _
   std::string rv = "";
   int len = name.length();
@@ -143,8 +140,7 @@ std::string CamelToLower(const std::string &name) {
   return rv;
 }
 
-
-std::string ToUpper(const std::string &name) {
+std::string ToUpper(compat::StringView name) {
   std::string rv = "";
   int len = name.length();
   for (int i = 0; i < len; i++) {
@@ -152,7 +148,8 @@ std::string ToUpper(const std::string &name) {
   }
   return rv;
 }
-std::string ToLower(const std::string &name) {
+
+std::string ToLower(compat::StringView name) {
   std::string rv = "";
   int len = name.length();
   for (int i = 0; i < len; i++) {
@@ -160,7 +157,8 @@ std::string ToLower(const std::string &name) {
   }
   return rv;
 }
-std::string ToCamel(const std::string &name) {
+
+std::string ToCamel(compat::StringView name) {
   std::string rv = "";
   int len = name.length();
   bool next_is_upper = true;
@@ -177,21 +175,19 @@ std::string ToCamel(const std::string &name) {
   return rv;
 }
 
-std::string OverrideFullName(const std::string &full_name,
-			    const FileDescriptor *file) {
+std::string OverrideFullName(compat::StringView full_name, const google::protobuf::FileDescriptor* file) {
   const ProtobufCFileOptions opt = file->options().GetExtension(pb_c_file);
   if (!opt.has_c_package())
-    return full_name;
+    return std::string(full_name);
 
   std::string new_name = opt.c_package();
   if (file->package().empty())
     new_name += ".";
 
-  return new_name + full_name.substr(file->package().length());
+  return new_name + std::string(full_name.substr(file->package().length()));
 }
 
-std::string FullNameToLower(const std::string &full_name,
-			    const FileDescriptor *file) {
+std::string FullNameToLower(compat::StringView full_name, const google::protobuf::FileDescriptor* file) {
   std::vector<std::string> pieces;
   SplitStringUsing(OverrideFullName(full_name, file), ".", &pieces);
   std::string rv = "";
@@ -202,8 +198,8 @@ std::string FullNameToLower(const std::string &full_name,
   }
   return rv;
 }
-std::string FullNameToUpper(const std::string &full_name,
-			    const FileDescriptor *file) {
+
+std::string FullNameToUpper(compat::StringView full_name, const google::protobuf::FileDescriptor* file) {
   std::vector<std::string> pieces;
   SplitStringUsing(OverrideFullName(full_name, file), ".", &pieces);
   std::string rv = "";
@@ -214,8 +210,8 @@ std::string FullNameToUpper(const std::string &full_name,
   }
   return rv;
 }
-std::string FullNameToC(const std::string &full_name,
-			const FileDescriptor *file) {
+
+std::string FullNameToC(compat::StringView full_name, const google::protobuf::FileDescriptor* file) {
   std::vector<std::string> pieces;
   SplitStringUsing(OverrideFullName(full_name, file), ".", &pieces);
   std::string rv = "";
@@ -227,7 +223,7 @@ std::string FullNameToC(const std::string &full_name,
   return rv;
 }
 
-void PrintComment (io::Printer* printer, std::string comment)
+void PrintComment(google::protobuf::io::Printer* printer, std::string comment)
 {
    if (!comment.empty())
    {
@@ -257,7 +253,7 @@ void PrintComment (io::Printer* printer, std::string comment)
    }
 }
 
-std::string ConvertToSpaces(const std::string &input) {
+std::string ConvertToSpaces(compat::StringView input) {
   return std::string(input.size(), ' ');
 }
 
@@ -265,11 +261,10 @@ int compare_name_indices_by_name(const void *a, const void *b)
 {
   const NameIndex *ni_a = (const NameIndex *) a;
   const NameIndex *ni_b = (const NameIndex *) b;
-  return strcmp (ni_a->name, ni_b->name);
+  return ni_a->name.compare(ni_b->name);
 }
 
-
-std::string CEscape(const std::string& src);
+std::string CEscape(compat::StringView src);
 
 const char* const kKeywordList[] = {
   "and", "and_eq", "asm", "auto", "bitand", "bitor", "bool", "break", "case",
@@ -294,7 +289,7 @@ std::set<std::string> MakeKeywordsMap() {
 
 std::set<std::string> kKeywords = MakeKeywordsMap();
 
-std::string FieldName(const FieldDescriptor* field) {
+std::string FieldName(const google::protobuf::FieldDescriptor* field) {
   std::string result = ToLower(field->name());
   if (kKeywords.count(result) > 0) {
     result.append("_");
@@ -302,14 +297,14 @@ std::string FieldName(const FieldDescriptor* field) {
   return result;
 }
 
-std::string FieldDeprecated(const FieldDescriptor* field) {
+std::string FieldDeprecated(const google::protobuf::FieldDescriptor* field) {
   if (field->options().deprecated()) {
     return " PROTOBUF_C__DEPRECATED";
   }
   return "";
 }
 
-std::string StripProto(const std::string& filename) {
+std::string StripProto(compat::StringView filename) {
   if (HasSuffixString(filename, ".protodevel")) {
     return StripSuffixString(filename, ".protodevel");
   } else {
@@ -318,7 +313,7 @@ std::string StripProto(const std::string& filename) {
 }
 
 // Convert a file name into a valid identifier.
-std::string FilenameIdentifier(const std::string& filename) {
+std::string FilenameIdentifier(compat::StringView filename) {
   std::string result;
   for (unsigned i = 0; i < filename.size(); i++) {
     if (isalnum(filename[i])) {
@@ -328,31 +323,26 @@ std::string FilenameIdentifier(const std::string& filename) {
       // use the hex code for the character.
       result.push_back('_');
       char buffer[32];
-      result.append(FastHexToBuffer(static_cast<uint8>(filename[i]), buffer));
+      result.append(FastHexToBuffer(static_cast<std::uint8_t>(filename[i]), buffer));
     }
   }
   return result;
 }
 
-// Return the name of the BuildDescriptors() function for a given file.
-std::string GlobalBuildDescriptorsName(const std::string& filename) {
-  return "proto_BuildDescriptors_" + FilenameIdentifier(filename);
-}
-
-std::string GetLabelName(FieldDescriptor::Label label) {
+std::string GetLabelName(google::protobuf::FieldDescriptor::Label label) {
   switch (label) {
-    case FieldDescriptor::LABEL_OPTIONAL: return "optional";
-    case FieldDescriptor::LABEL_REQUIRED: return "required";
-    case FieldDescriptor::LABEL_REPEATED: return "repeated";
+    case google::protobuf::FieldDescriptor::LABEL_OPTIONAL: return "optional";
+    case google::protobuf::FieldDescriptor::LABEL_REQUIRED: return "required";
+    case google::protobuf::FieldDescriptor::LABEL_REPEATED: return "repeated";
   }
   return "bad-label";
 }
 
 unsigned
-WriteIntRanges(io::Printer* printer, int n_values, const int *values, const std::string &name)
+WriteIntRanges(google::protobuf::io::Printer* printer, int n_values, const int *values, compat::StringView name)
 {
   std::map<std::string, std::string> vars;
-  vars["name"] = name;
+  vars["name"] = std::string(name);
   if (n_values > 0) {
     int n_ranges = 1;
     for (int i = 1; i < n_values; i++) {
@@ -393,57 +383,6 @@ WriteIntRanges(io::Printer* printer, int n_values, const int *values, const std:
   }
 }
     
-
-
-// XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXx
-// XXXXXXXXX  this stuff is copied from strutils.cc !!!!   XXXXXXXXXXXXXXXXXXXXXXXXXXXXx
-// XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXx
-// ----------------------------------------------------------------------
-// StringReplace()
-//    Replace the "old" pattern with the "new" pattern in a string,
-//    and append the result to "res".  If replace_all is false,
-//    it only replaces the first instance of "old."
-// ----------------------------------------------------------------------
-
-void StringReplace(const std::string& s, const std::string& oldsub,
-                   const std::string& newsub, bool replace_all,
-                   std::string* res) {
-  if (oldsub.empty()) {
-    res->append(s);  // if empty, append the given string.
-    return;
-  }
-
-  std::string::size_type start_pos = 0;
-  std::string::size_type pos;
-  do {
-    pos = s.find(oldsub, start_pos);
-    if (pos == std::string::npos) {
-      break;
-    }
-    res->append(s, start_pos, pos - start_pos);
-    res->append(newsub);
-    start_pos = pos + oldsub.size();  // start searching again after the "old"
-  } while (replace_all);
-  res->append(s, start_pos, s.length() - start_pos);
-}
-
-
-// ----------------------------------------------------------------------
-// StringReplace()
-//    Give me a string and two patterns "old" and "new", and I replace
-//    the first instance of "old" in the string with "new", if it
-//    exists.  If "global" is true; call this repeatedly until it
-//    fails.  RETURN a new string, regardless of whether the replacement
-//    happened or not.
-// ----------------------------------------------------------------------
-
-std::string StringReplace(const std::string& s, const std::string& oldsub,
-                          const std::string& newsub, bool replace_all) {
-  std::string ret;
-  StringReplace(s, oldsub, newsub, replace_all, &ret);
-  return ret;
-}
-
 // ----------------------------------------------------------------------
 // SplitStringUsing()
 //    Split a string using a character delimiter. Append the components
@@ -454,7 +393,7 @@ std::string StringReplace(const std::string& s, const std::string& oldsub,
 // ----------------------------------------------------------------------
 template <typename ITR>
 static inline
-void SplitStringToIteratorUsing(const std::string& full,
+void SplitStringToIteratorUsing(compat::StringView full,
                                 const char* delim,
                                 ITR& result) {
   // Optimize the common case where delim is a single character.
@@ -479,15 +418,15 @@ void SplitStringToIteratorUsing(const std::string& full,
   while (begin_index != std::string::npos) {
     end_index = full.find_first_of(delim, begin_index);
     if (end_index == std::string::npos) {
-      *result++ = full.substr(begin_index);
+      *result++ = std::string(full.substr(begin_index));
       return;
     }
-    *result++ = full.substr(begin_index, (end_index - begin_index));
+    *result++ = std::string(full.substr(begin_index, (end_index - begin_index)));
     begin_index = full.find_first_not_of(delim, end_index);
   }
 }
 
-void SplitStringUsing(const std::string& full,
+void SplitStringUsing(compat::StringView full,
                       const char* delim,
                       std::vector<std::string>* result) {
   std::back_insert_iterator< std::vector<std::string> > it(*result);
@@ -499,7 +438,6 @@ char* FastHexToBuffer(int i, char* buffer)
   snprintf(buffer, 16, "%x", i);
   return buffer;
 }
-
 
 static int CEscapeInternal(const char* src, int src_len, char* dest,
                            int dest_len, bool use_hex) {
@@ -527,7 +465,7 @@ static int CEscapeInternal(const char* src, int src_len, char* dest,
           if (dest_len - used < 4) // need space for 4 letter escape
             return -1;
           snprintf(dest + used, dest_len - used, (use_hex ? "\\x%02x" : "\\%03o"),
-                  static_cast<uint8>(*src));
+                  static_cast<std::uint8_t>(*src));
           is_hex_escape = use_hex;
           used += 4;
         } else {
@@ -543,7 +481,8 @@ static int CEscapeInternal(const char* src, int src_len, char* dest,
   dest[used] = '\0';   // doesn't count towards return value though
   return used;
 }
-std::string CEscape(const std::string& src) {
+
+std::string CEscape(compat::StringView src) {
   const int dest_length = src.size() * 4 + 1; // Maximum possible expansion
   std::unique_ptr<char[]> dest(new char[dest_length]);
   const int len = CEscapeInternal(src.data(), src.size(),
@@ -552,7 +491,4 @@ std::string CEscape(const std::string& src) {
   return std::string(dest.get(), len);
 }
 
-}  // namespace c
-}  // namespace compiler
-}  // namespace protobuf
-}  // namespace google
+}  // namespace protobuf_c

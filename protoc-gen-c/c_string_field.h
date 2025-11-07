@@ -32,7 +32,8 @@
 //  Based on original Protocol Buffers design by
 //  Sanjay Ghemawat, Jeff Dean, and others.
 
-// Copyright (c) 2008-2013, Dave Benson.  All rights reserved.
+// Copyright (c) 2008-2025, Dave Benson and the protobuf-c authors.
+// All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -60,57 +61,33 @@
 
 // Modified to implement C code by Dave Benson.
 
-#ifndef GOOGLE_PROTOBUF_COMPILER_C_ENUM_H__
-#define GOOGLE_PROTOBUF_COMPILER_C_ENUM_H__
+#ifndef PROTOBUF_C_PROTOC_GEN_C_C_STRING_FIELD_H__
+#define PROTOBUF_C_PROTOC_GEN_C_C_STRING_FIELD_H__
 
+#include <map>
 #include <string>
-#include <google/protobuf/descriptor.h>
 
-namespace google {
-namespace protobuf {
-  namespace io {
-    class Printer;             // printer.h
-  }
-}
+#include "c_field.h"
 
-namespace protobuf {
-namespace compiler {
-namespace c {
+namespace protobuf_c {
 
-class EnumGenerator {
+class StringFieldGenerator : public FieldGenerator {
  public:
-  // See generator.cc for the meaning of dllexport_decl.
-  explicit EnumGenerator(const EnumDescriptor* descriptor,
-                         const std::string& dllexport_decl);
-  ~EnumGenerator();
+  explicit StringFieldGenerator(const google::protobuf::FieldDescriptor* descriptor);
+  ~StringFieldGenerator();
 
-  // Header stuff.
-
-  // Generate header code defining the enum.  This code should be placed
-  // within the enum's package namespace, but NOT within any class, even for
-  // nested enums.
-  void GenerateDefinition(io::Printer* printer);
-
-  void GenerateDescriptorDeclarations(io::Printer* printer);
-
-
-  // Source file stuff.
-
-  // Generate the ProtobufCEnumDescriptor for this enum
-  void GenerateEnumDescriptor(io::Printer* printer);
-
-  // Generate static initializer for a ProtobufCEnumValue
-  // given the index of the value in the enum.
-  void GenerateValueInitializer(io::Printer *printer, int index);
+  // implements FieldGenerator ---------------------------------------
+  void GenerateStructMembers(google::protobuf::io::Printer* printer) const;
+  void GenerateDescriptorInitializer(google::protobuf::io::Printer* printer) const;
+  void GenerateDefaultValueDeclarations(google::protobuf::io::Printer* printer) const;
+  void GenerateDefaultValueImplementations(google::protobuf::io::Printer* printer) const;
+  std::string GetDefaultValue(void) const;
+  void GenerateStaticInit(google::protobuf::io::Printer* printer) const;
 
  private:
-  const EnumDescriptor* descriptor_;
-  std::string dllexport_decl_;
+  std::map<std::string, std::string> variables_;
 };
 
-}  // namespace c
-}  // namespace compiler
-}  // namespace protobuf
+}  // namespace protobuf_c
 
-}  // namespace google
-#endif  // GOOGLE_PROTOBUF_COMPILER_C_ENUM_H__
+#endif  // PROTOBUF_C_PROTOC_GEN_C_C_STRING_FIELD_H__

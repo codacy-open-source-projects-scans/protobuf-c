@@ -32,7 +32,8 @@
 //  Based on original Protocol Buffers design by
 //  Sanjay Ghemawat, Jeff Dean, and others.
 
-// Copyright (c) 2008-2013, Dave Benson.  All rights reserved.
+// Copyright (c) 2008-2025, Dave Benson and the protobuf-c authors.
+// All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -60,49 +61,45 @@
 
 // Modified to implement C code by Dave Benson.
 
-#ifndef GOOGLE_PROTOBUF_COMPILER_C_EXTENSION_H__
-#define GOOGLE_PROTOBUF_COMPILER_C_EXTENSION_H__
+// Generates C code for a given .proto file.
+
+#ifndef PROTOBUF_C_PROTOC_GEN_C_C_GENERATOR_H__
+#define PROTOBUF_C_PROTOC_GEN_C_C_GENERATOR_H__
 
 #include <string>
-#include <google/protobuf/stubs/common.h>
 
-namespace google {
-namespace protobuf {
-  class FieldDescriptor;       // descriptor.h
-  namespace io {
-    class Printer;             // printer.h
-  }
-}
+#include <google/protobuf/compiler/code_generator.h>
 
-namespace protobuf {
-namespace compiler {
-namespace c {
+#if defined(_WIN32) && defined(PROTOBUF_C_USE_SHARED_LIB)
+# define PROTOBUF_C_EXPORT __declspec(dllexport)
+#else
+# define PROTOBUF_C_EXPORT
+#endif
 
-// Generates code for an extension, which may be within the scope of some
-// message or may be at file scope.  This is much simpler than FieldGenerator
-// since extensions are just simple identifiers with interesting types.
-class ExtensionGenerator {
+namespace protobuf_c {
+
+// CodeGenerator implementation which generates a C++ source file and
+// header.  If you create your own protocol compiler binary and you want
+// it to support C++ output, you can do so by registering an instance of this
+// CodeGenerator with the CommandLineInterface in your main() function.
+class PROTOBUF_C_EXPORT CGenerator : public google::protobuf::compiler::CodeGenerator {
  public:
-  // See generator.cc for the meaning of dllexport_decl.
-  explicit ExtensionGenerator(const FieldDescriptor* descriptor,
-                              const std::string& dllexport_decl);
-  ~ExtensionGenerator();
+  CGenerator();
+  ~CGenerator();
 
-  // Header stuff.
-  void GenerateDeclaration(io::Printer* printer);
+  // implements CodeGenerator ----------------------------------------
+  bool Generate(const google::protobuf::FileDescriptor* file,
+                const std::string& parameter,
+                google::protobuf::compiler::OutputDirectory* output_directory,
+                std::string* error) const;
 
-  // Source file stuff.
-  void GenerateDefinition(io::Printer* printer);
-
- private:
-  const FieldDescriptor* descriptor_;
-  std::string type_traits_;
-  std::string dllexport_decl_;
+#if GOOGLE_PROTOBUF_VERSION >= 5026000
+  uint64_t GetSupportedFeatures() const { return 0; }
+  google::protobuf::Edition GetMinimumEdition() const { return google::protobuf::Edition::EDITION_PROTO2; }
+  google::protobuf::Edition GetMaximumEdition() const { return google::protobuf::Edition::EDITION_PROTO3; }
+#endif
 };
 
-}  // namespace c
-}  // namespace compiler
-}  // namespace protobuf
+}  // namespace protobuf_c
 
-}  // namespace google
-#endif  // GOOGLE_PROTOBUF_COMPILER_C_MESSAGE_H__
+#endif  // PROTOBUF_C_PROTOC_GEN_C_C_GENERATOR_H__

@@ -32,7 +32,8 @@
 //  Based on original Protocol Buffers design by
 //  Sanjay Ghemawat, Jeff Dean, and others.
 
-// Copyright (c) 2008-2013, Dave Benson.  All rights reserved.
+// Copyright (c) 2008-2025, Dave Benson and the protobuf-c authors.
+// All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -60,37 +61,28 @@
 
 // Modified to implement C code by Dave Benson.
 
-#ifndef GOOGLE_PROTOBUF_COMPILER_C_ENUM_FIELD_H__
-#define GOOGLE_PROTOBUF_COMPILER_C_ENUM_FIELD_H__
+#ifndef PROTOBUF_C_PROTOC_GEN_C_C_PRIMITIVE_FIELD_H__
+#define PROTOBUF_C_PROTOC_GEN_C_C_PRIMITIVE_FIELD_H__
 
 #include <map>
 #include <string>
-#include <protoc-c/c_field.h>
 
-namespace google {
-namespace protobuf {
-namespace compiler {
-namespace c {
+#include "c_field.h"
 
-class EnumFieldGenerator : public FieldGenerator {
+namespace protobuf_c {
+
+class PrimitiveFieldGenerator : public FieldGenerator {
  public:
-  explicit EnumFieldGenerator(const FieldDescriptor* descriptor);
-  ~EnumFieldGenerator();
+  explicit PrimitiveFieldGenerator(const google::protobuf::FieldDescriptor* descriptor);
+  ~PrimitiveFieldGenerator();
 
   // implements FieldGenerator ---------------------------------------
-  void GenerateStructMembers(io::Printer* printer) const;
-  void GenerateDescriptorInitializer(io::Printer* printer) const;
+  void GenerateStructMembers(google::protobuf::io::Printer* printer) const;
+  void GenerateDescriptorInitializer(google::protobuf::io::Printer* printer) const;
   std::string GetDefaultValue(void) const;
-  void GenerateStaticInit(io::Printer* printer) const;
-
- private:
-  std::map<std::string, std::string> variables_;
+  void GenerateStaticInit(google::protobuf::io::Printer* printer) const;
 };
 
+}  // namespace protobuf_c
 
-}  // namespace c
-}  // namespace compiler
-}  // namespace protobuf
-
-}  // namespace google
-#endif  // GOOGLE_PROTOBUF_COMPILER_C_ENUM_FIELD_H__
+#endif  // PROTOBUF_C_PROTOC_GEN_C_C_PRIMITIVE_FIELD_H__

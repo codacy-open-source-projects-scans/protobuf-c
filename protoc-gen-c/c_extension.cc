@@ -32,7 +32,8 @@
 //  Based on original Protocol Buffers design by
 //  Sanjay Ghemawat, Jeff Dean, and others.
 
-// Copyright (c) 2008-2013, Dave Benson.  All rights reserved.
+// Copyright (c) 2008-2025, Dave Benson and the protobuf-c authors.
+// All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -60,87 +61,25 @@
 
 // Modified to implement C code by Dave Benson.
 
-#ifndef GOOGLE_PROTOBUF_COMPILER_C_MESSAGE_H__
-#define GOOGLE_PROTOBUF_COMPILER_C_MESSAGE_H__
+#include <google/protobuf/descriptor.h>
+#include <google/protobuf/io/printer.h>
 
-#include <memory>
-#include <string>
-#include <google/protobuf/stubs/common.h>
-#include <protoc-c/c_field.h>
+#include "c_extension.h"
 
-namespace google {
-namespace protobuf {
-  namespace io {
-    class Printer;             // printer.h
-  }
+namespace protobuf_c {
+
+ExtensionGenerator::ExtensionGenerator(const google::protobuf::FieldDescriptor* descriptor,
+                                       const std::string& dllexport_decl)
+  : descriptor_(descriptor),
+    dllexport_decl_(dllexport_decl) {
 }
 
-namespace protobuf {
-namespace compiler {
-namespace c {
+ExtensionGenerator::~ExtensionGenerator() {}
 
-class EnumGenerator;           // enum.h
-class ExtensionGenerator;      // extension.h
+void ExtensionGenerator::GenerateDeclaration(google::protobuf::io::Printer* printer) {
+}
 
-class MessageGenerator {
- public:
-  // See generator.cc for the meaning of dllexport_decl.
-  explicit MessageGenerator(const Descriptor* descriptor,
-                            const std::string& dllexport_decl);
-  ~MessageGenerator();
+void ExtensionGenerator::GenerateDefinition(google::protobuf::io::Printer* printer) {
+}
 
-  // Header stuff.
-
-  // Generate typedef.
-  void GenerateStructTypedef(io::Printer* printer);
-
-  // Generate descriptor prototype
-  void GenerateDescriptorDeclarations(io::Printer* printer);
-
-  // Generate descriptor prototype
-  void GenerateClosureTypedef(io::Printer* printer);
-
-  // Generate definitions of all nested enums (must come before class
-  // definitions because those classes use the enums definitions).
-  void GenerateEnumDefinitions(io::Printer* printer);
-
-  // Generate definitions for this class and all its nested types.
-  void GenerateStructDefinition(io::Printer* printer);
-
-  // Generate __INIT macro for populating this structure
-  void GenerateStructStaticInitMacro(io::Printer* printer);
-
-  // Generate standard helper functions declarations for this message.
-  void GenerateHelperFunctionDeclarations(io::Printer* printer,
-					  bool is_pack_deep,
-					  bool gen_pack,
-					  bool gen_init);
-
-  // Source file stuff.
-
-  // Generate code that initializes the global variable storing the message's
-  // descriptor.
-  void GenerateMessageDescriptor(io::Printer* printer, bool gen_init);
-  void GenerateHelperFunctionDefinitions(io::Printer* printer,
-					 bool is_pack_deep,
-					 bool gen_pack,
-					 bool gen_init);
-
- private:
-
-  std::string GetDefaultValueC(const FieldDescriptor *fd);
-
-  const Descriptor* descriptor_;
-  std::string dllexport_decl_;
-  FieldGeneratorMap field_generators_;
-  std::unique_ptr<std::unique_ptr<MessageGenerator>[]> nested_generators_;
-  std::unique_ptr<std::unique_ptr<EnumGenerator>[]> enum_generators_;
-  std::unique_ptr<std::unique_ptr<ExtensionGenerator>[]> extension_generators_;
-};
-
-}  // namespace c
-}  // namespace compiler
-}  // namespace protobuf
-
-}  // namespace google
-#endif  // GOOGLE_PROTOBUF_COMPILER_C_MESSAGE_H__
+}  // namespace protobuf_c
